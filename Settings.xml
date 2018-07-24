@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<Settings>
+    <UI>
+        <WindowTitle>DBA Function Manager</WindowTitle>
+        <Version>1.0.0</Version>
+        <BackgroundColor>Black</BackgroundColor>
+        <ForegroundColor>Green</ForegroundColor>
+
+    </UI>
+    <DatabaseConnection>
+        <ServerInstance>SQLSRV01</ServerInstance>
+        <Database>DBAToolbox</Database>
+        <QueryTimeout>3600</QueryTimeout>
+    </DatabaseConnection>
+</Settings>
