@@ -6,7 +6,7 @@ with most SQL Server 2008 and later versions (none of the code is dependent on
 a specific Version or Edition).
 
 Requirements for this application/utility/script originated from DBAs having to
-be available fro menial tasks, such as running or re-running multiple jobs, 
+be available for menial tasks, such as running or re-running multiple jobs, 
 taking manual backups, etc. which are a huge time-waster when you're trying to 
 prevent things from falling over.
 
