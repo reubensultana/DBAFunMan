@@ -1,4 +1,6 @@
-﻿# **************************************************
+param([String]$SettingsXMLFile = '')
+
+# **************************************************
 # DBA Function Manager
 # **************************************************
 
@@ -18,8 +20,13 @@ $CurrentPath = Get-Location
 . "$($CurrentPath)\Community_Functions.ps1"
 
 # Import settings from config file
-[xml]$ConfigFile = Get-Content "$($CurrentPath)\Settings.xml"
-# Note to self: Modify to allow for "Settings.xml" file as a script parameter
+# Modified to allow for "Settings.xml" file as a script parameter
+if ($SettingsXMLFile -eq "") {$SettingsXMLFile = "$CurrentPath\Settings.xml"}
+if (Test-Path($SettingsXMLFile)) { [xml]$ConfigFile = Get-Content $SettingsXMLFile }
+else {
+    Write-Warning "Settings file could not be found in current location."
+    Write-Warning "Kindly ensure that the current folder contains a valid ""Settings.xml"" file."
+}
 
 # UI
 $WindowTitle = $ConfigFile.Settings.UI.WindowTitle
@@ -34,7 +41,7 @@ $QueryTimeout = $ConfigFile.Settings.DatabaseConnection.QueryTimeout
 #Write-Output "WindowTitle={0}" -f $WindowTitle
 #Write-Output "ServerInstance={0};Database={1};BackupRoot={2}" -f $ServerInstance,$Database,$BackupRoot
 #Write-Output "BackgroundColor={0};ForegroundColor={1}" -f $BackgroundColor,$ForegroundColor
-#Pause
+#Read-Host "Press any key to continue... "
 
 $CurrentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
 $HostName = [System.Environment]::MachineName
@@ -56,16 +63,18 @@ switch ($random.Next(4)) {
 4 {$console.BackgroundColor = "DarkCyan";    $console.ForegroundColor = "DarkYellow"}
 }   #end switch
 #>
-$size = $console.WindowSize
-$size.Width = 100
-$size.Height = 40
-$console.WindowSize = $size
-
 $buffer = $console.BufferSize
 $buffer.Width = 100
 $buffer.Height = 2000
 $console.BufferSize = $buffer
+
+$size = $console.WindowSize
+$size.Width = 100
+$size.Height = 40
+$console.WindowSize = $size
 # end console window properties
+
+#Exception setting "WindowSize": "Window cannot be wider than the screen buffer.
 
 # array that will store the dynamic options
 $script:ObjectArray = @()
@@ -140,13 +149,19 @@ function Get-CommandList {
 
 function Execute-Command( [string] $CommandRef ) {
     $Command = $script:ObjectArray.Get($($CommandRef-1)).Value
-    Write-host "Command = $Command"
+    #Write-host "Command = $Command"
 
     # fetch list from the database
     $ExecuteCommand = $("EXEC [Manager].[usp_ExecuteCommand] '{0}';" -f $Command)
 
-    # populate array by converting the DataTable output from Invoke-Sqlcmd2 and piping the result to the array
-    Invoke-Sqlcmd2 -ServerInstance $ServerInstance -Database $Database -Query $ExecuteCommand -Verbose -QueryTimeout $QueryTimeout
+    try {
+        # populate array by converting the DataTable output from Invoke-Sqlcmd2 and piping the result to the array
+        Invoke-Sqlcmd2 -ServerInstance $ServerInstance -Database $Database -Query $ExecuteCommand -Verbose -QueryTimeout $QueryTimeout
+    }
+    catch {
+        $ex = $_.Exception 
+        Write-Error "$ex.Message" 
+    }
 }
 
 #------------------------------------------------------------# 
@@ -162,13 +177,13 @@ function Main-Menu {
     $ItemCount = $script:ObjectArray.Count
 
     Write-Footer
-    $answer = Read-Host "Please choose an option"
+    [int]$answer = Read-Host "Please choose an option"
 
     if     ($answer -eq 0) {AreYouSure}
-    elseif (($answer -gt 0) -and ($answer -le $ItemCount)) {Execute-Command($answer); Pause; Main-Menu}
-    else { Write-Warning "Invalid item selected"; Pause; Main-Menu }
+    elseif (($answer -gt 0) -and ($answer -le $ItemCount)) {Execute-Command($answer); Read-Host "Press any key to continue... " ; Main-Menu}
+    else { Write-Warning "Invalid item selected"; Read-Host "Press any key to continue... " ; Main-Menu }
 }
 
 #------------------------------------------------------------# 
 
-Main-Menu
+if ($SettingsXMLFile -ne "") { Main-Menu }
